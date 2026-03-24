@@ -626,25 +626,52 @@ AWS_SECRET_ACCESS_KEY=xxx
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/openclaw
 
-# Encryption (générer : openssl rand -hex 32)
-ENCRYPTION_KEY=
-
 # WebSocket
-WS_SECRET=
+WS_PORT=3001
 
-# Gemini (8 clés en rotation — stockées dans AWS Secrets Manager)
+# L'image Docker de l'agent
+OPENCLAW_IMAGE=openclaw-agent:latest
+
+# Gemini (8 clés en rotation)
 GEMINI_API_KEY_1=AIza...
-GEMINI_API_KEY_2=AIza...
-GEMINI_API_KEY_3=AIza...
-GEMINI_API_KEY_4=AIza...
-GEMINI_API_KEY_5=AIza...
-GEMINI_API_KEY_6=AIza...
-GEMINI_API_KEY_7=AIza...
-GEMINI_API_KEY_8=AIza...
-
-# Docker
-DOCKER_SOCKET=/var/run/docker.sock
+# etc...
 ```
+
+---
+
+## 18. Installation Locale & Guide de Développement
+
+Voici comment lancer l'architecture complète sur Windows/Mac en local (Agent + Dashboard + WebSockets) :
+
+### 1. Prérequis
+Vous devez disposer sur votre machine de :
+- Node.js version 20 ou +
+- Docker Desktop (en cours de fonctionnement)
+- PostgreSQL (ou stack Docker DB locale `postgres:16-alpine`)
+
+### 2. Configuration Backend SaaS
+À la racine de ce dépôt (`openclaw-saas`) :
+1. Copiez le template : `cp .env.example .env` et remplissez vos clés (Clerk, Stripe, Gemini, Token interne).
+2. Lancez `npm install`
+3. Synchronisez votre base de données locale Prisma : `npx prisma db push` puis `npx prisma generate`
+4. Démarrez l'application SaaS (Next.js sur port 3000) ET en même temps le serveur WebSocket temps réel (sur port 3001) : 
+   ```bash
+   npm run dev
+   ```
+
+### 3. Construction de l'Agent
+Dans le dossier du projet agent (`openclaw-agent`) contenant le code de la Gateway openclaw :
+1. Exécutez `npm run build`
+2. Construisez l'image Docker locale :
+   ```bash
+   docker build -t openclaw-agent:latest .
+   ```
+
+### 4. Tests
+1. Allez sur le Dashboard SaaS : `http://localhost:3000/dashboard`
+2. Cliquez sur "**Configurer mon agent**".
+3. Validez la configuration Stripe et lancez le **Déploiement**.
+4. Le Backend commandera Dockerode qui reliera le conteneur agent natif au WebSocket 3001 du SaaS, rapatriant en direct la console CLI sur le front !
 
 ---
 
